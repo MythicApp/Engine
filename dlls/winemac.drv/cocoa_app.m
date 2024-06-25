@@ -905,6 +905,7 @@ static NSString* WineLocalizedString(unsigned int stringID)
                 NSLog(@"setProcessName: Failed to get _LSSetApplicationInformationItem in LaunchServices");
                 return false;
             }
+
             // Get the display name key
             const CFStringRef* displayNameKey = (const CFStringRef*)(
                 CFBundleGetDataPointerForName(launchServicesBundle, CFSTR("_kLSDisplayNameKey"))
@@ -914,6 +915,7 @@ static NSString* WineLocalizedString(unsigned int stringID)
                 NSLog(@"setProcessName: Failed to get _kLSDisplayNameKey in LaunchServices");
                 return false;
             }
+
             // Force symbols to be loaded in the LaunchServices framework
             ColorSyncCMMGetTypeID();
         }
