@@ -391,6 +391,7 @@ static NSString* WineLocalizedString(unsigned int stringID)
             /* Whisky hack #9 */
             // Set application name
             NSString* appName = [NSString stringWithFormat:kAppNameText, self.applicationName];
+            NSLog(@"Setting process name to %@", appName);
             bool success = [self setProcessName:appName];
             if (!success)
                 NSLog(@"Failed to set process name to %@", appName);
@@ -904,7 +905,6 @@ static NSString* WineLocalizedString(unsigned int stringID)
                 NSLog(@"setProcessName: Failed to get _LSSetApplicationInformationItem in LaunchServices");
                 return false;
             }
-
             // Get the display name key
             const CFStringRef* displayNameKey = (const CFStringRef*)(
                 CFBundleGetDataPointerForName(launchServicesBundle, CFSTR("_kLSDisplayNameKey"))
@@ -914,10 +914,8 @@ static NSString* WineLocalizedString(unsigned int stringID)
                 NSLog(@"setProcessName: Failed to get _kLSDisplayNameKey in LaunchServices");
                 return false;
             }
-
             // Force symbols to be loaded in the LaunchServices framework
-            ProcessSerialNumber psn = {0, kCurrentProcess};
-            GetCurrentProcess(&psn);
+            ColorSyncCMMGetTypeID();
         }
 
         // If any of the function pointers are NULL, we can't continue
