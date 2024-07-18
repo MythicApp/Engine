@@ -1,10 +1,8 @@
 name: Build Wine
-
 on:
   pull_request:
   push:
   workflow_dispatch:
-
 env: 
   CC: clang
   CXX: clang++
@@ -18,16 +16,13 @@ env:
   BUILDROOT: $GITHUB_WORKSPACE/build
   WINE_INSTALLROOT: install
   WINE_MONO: https://github.com/madewokherd/wine-mono/releases/download/wine-mono-7.4.1/wine-mono-7.4.1-x86.tar.xz
-
 jobs:
   build:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
-
       - name: Use Xcode 15
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app/Contents/Developer
-
       - name: Install Homebrew Packages
         continue-on-error: true
         run: |
@@ -36,10 +31,8 @@ jobs:
               "bison"
               "pkg-config"
               "gcenx/wine/cx-llvm"
-
               # Utilities (DXVK)
               "jq"
-
               # Dependencies
               "freetype"
               "gettext"
@@ -49,38 +42,59 @@ jobs:
               "molten-vk"
               "winetricks"
           )
-
           brew install "${REQUIRED_PACKAGES[@]}"
-
+      - name: Install mingw
+        continue-on-error: true
+        run: |
           # As of mingw-w64 12, brew uses UCRT instead of MSVCRT
           # Wine will fail to build with UCRT, so we must rollback.
 
+    
+        
+          
+    
+
+        
+        Expand All
+    
+    @@ -63,13 +60,13 @@ jobs:
+  
           curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb > mingw-w64.rb && brew install mingw-w64.rb
           rm mingw-w64.rb
-
       - name: Echo Libs [DEBUG]
         run: |
-          echo "Brew Libs\n========="
+          echo "Brew Libs"
           ls $(brew --prefix)/lib
-
-          echo "FFmpeg Libs\n===========" 
+          echo "FFmpeg Libs" 
           ls $(brew --prefix ffmpeg@6)/lib
-
-          echo "GStreamer Libs\n=============="
+          echo "GStreamer Libs"
           ls $(brew --prefix gstreamer)/lib/gstreamer-1.0
-
       - name: Add bison & cx-llvm to $PATH
+
+    
+          
+            
+    
+
+          
+          Expand Down
+          
+            
+    
+
+          
+          Expand Up
+    
+    @@ -251,38 +248,30 @@ jobs:
+  
         run: |
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
           echo "$(brew --prefix cx-llvm)/bin" >> $GITHUB_PATH
-
       - name: Configure wine64
         run: |
           set -x
-
           export ac_cv_lib_soname_MoltenVK="libMoltenVK.dylib"
           export ac_cv_lib_soname_vulkan=""
-
           mkdir -p ${{ env.BUILDROOT }}/wine64
           pushd ${{ env.BUILDROOT }}/wine64
           ${{ env.WINE_CONFIGURE }} \
@@ -119,13 +133,11 @@ jobs:
             --with-vulkan \
             --without-x 
           popd
-
       - name: Build wine64
         run: |
           pushd ${{ env.BUILDROOT }}/wine64
           make -j$(sysctl -n hw.ncpu 2>/dev/null)
           popd
-
       - name: Install wine64
         run: |
           pushd ${{ env.BUILDROOT }}/wine64
@@ -135,10 +147,8 @@ jobs:
       - name: Configure wine32on64
         run: |
           set -x
-
           export ac_cv_lib_soname_MoltenVK="libMoltenVK.dylib"
           export ac_cv_lib_soname_vulkan=""
-
           mkdir -p ${{ env.BUILDROOT }}/wine32on64
           pushd ${{ env.BUILDROOT }}/wine32on64
           ${{ env.WINE_CONFIGURE }} \
@@ -181,38 +191,29 @@ jobs:
             --with-wine64=${{ env.BUILDROOT }}/wine64 \
             --without-x
           popd
-
       - name: Build wine32on64
         run: |
           pushd ${{ env.BUILDROOT }}/wine32on64
           make -j$(sysctl -n hw.ncpu 2>/dev/null)
           popd
-
       - name: Install wine32on64
         run: |
           pushd ${{ env.BUILDROOT }}/wine32on64
           make install-lib DESTDIR="$GITHUB_WORKSPACE/${{ env.WINE_INSTALLROOT }}"
           popd
-
       - name: Fetch Winetricks Verbs
         run: |
           curl -L -o verbs.txt https://raw.githubusercontent.com/Winetricks/winetricks/master/files/verbs/all.txt
-
       - name: Assemble Engine Folder
         run: |
           mkdir -p Engine/DXVK
           mkdir -p Engine/wine
-
           cp -a ${{ env.WINE_INSTALLROOT }}/. Engine/wine/
-
           rm -rf Engine/wine/share/man
-
           cp -a verbs.txt Engine
           cp -a properties.plist Engine
-
           cp -a $(brew --prefix winetricks)/bin/winetricks Engine
           cp -a DXVK Engine
-
       - name: Copy External Libraries
         run: |
           LIBS=(
@@ -248,16 +249,22 @@ jobs:
               "libidn2.0"
               "libintl.8"
               "libjpeg.8"
+              "libjxl.0.10"
+              "libjxl_threads.0.10"
               "libMoltenVK"
               "libnettle.8"
+              "libogg.0"
+              "libopenvino.2410"
+              "libopenvino_c.2410"
+              "libopenvino_onnx_frontend.2410"
+              "libopenvino_paddle_frontend.2410"
+              "libopenvino_pytorch_frontend.2410"
+              "libopenvino_tensorflow_frontend.2410"
+              "libopenvino_tensorflow_lite_frontend.2410"
               "liborc-0.4.0"
               "libp11-kit.0"
               "libpcre2-8.0"
               "libpng16.16"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> parent of c6243483707 (More ffmpeg deps)
               "librist.4"
               "librubberband.2"
               "libSDL2-2.0.0"
@@ -265,19 +272,29 @@ jobs:
               "libunistring.5"
               "libvorbis.0"
               "libvorbisenc.2"
-=======
-              "libSDL2-2.0.0"
-              "libtasn1.6"
-              "libunistring.5"
->>>>>>> parent of 35744b300a0 (Merge remote-tracking branch 'upstream/7.7' into 7.7)
               "libvpx.8"
+              "libwebp.7"
+              "libwebpmux.3"
               "libXau.6"
               "libXdmcp.6"
               "libX11.6"
               "libX11-xcb.1"
+              "libx264.164"
+              "libx265.209"
               "libxcb.1"
           )
 
+
+    
+          
+            
+    
+
+          
+          Expand Down
+    
+    
+  
           FFMPEG_LIBS=(
             "libavfilter.9"
             "libavformat.60"
@@ -287,7 +304,6 @@ jobs:
             "libswresample.4"
             "libswscale.7"
           )
-
           GSTREAMER_LIBS=(
               "libgstapplemedia"
               "libgstasf"
@@ -309,36 +325,27 @@ jobs:
               "libgstvideoparsersbad"
               "libgstwavparse"
           )
-
           for i in "${LIBS[@]}"
           do
               cp -Lr $(brew --prefix)/lib/"$i".dylib Engine/wine/lib
           done
-
           for i in "${FFMPEG_LIBS[@]}"
           do
               cp -Lr $(brew --prefix ffmpeg@6)/lib/"$i".dylib Engine/wine/lib
           done
-
           mkdir Engine/wine/lib/gstreamer-1.0
-
           for i in "${GSTREAMER_LIBS[@]}"
           do
               cp -Lr $(brew --prefix gstreamer)/lib/gstreamer-1.0/"$i".dylib Engine/wine/lib/gstreamer-1.0
           done
-
           cp -a $(brew --prefix gstreamer)/lib/gstreamer-1.0/include Engine/wine/lib/gstreamer-1.0
-
           # Fixup brew dylib LCs
-
           update_dylib_paths() {
               local dylib_file="$1"
               local path_prefix="$2"
               echo "Processing $dylib_file..."
-
               # Extract LC_LOAD_DYLIB paths using otool
               local load_dylibs=$(otool -L "$dylib_file" | grep -v "$dylib_file" | awk '{print $1}')
-
               for path in $load_dylibs; do
                   if [[ $path != /usr/lib* && $path != /System/* ]]; then
                       # For paths not excluded, replace the prefix with @loader_path/
@@ -351,36 +358,27 @@ jobs:
                   fi
               done
           }
-
           export -f update_dylib_paths
-
           find Engine/wine/lib -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/"' {} \;
           find Engine/wine/lib/gstreamer-1.0 -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/../"' {} \;
-
           update_dylib_paths Engine/wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
-
       - name: Copy GPTK Libraries
         run: |
           ditto GPTK/redist/lib/ Engine/wine/lib/
-
       - name: Download & Install Wine Mono
         run: |
           mkdir Engine/wine/share/wine/mono
-
           curl -L -o mono.tar.xz ${{ env.WINE_MONO }}
           tar -xzf mono.tar.xz -C Engine/wine/share/wine/mono
-
       - name: Calculate Checksums
         run: >
           find ./Engine -type f -exec shasum "{}" + > checksums.sha
-
       - name: Upload config64.log
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: config64
           path: build/wine64/config.log
-
       - name: Upload config32.log
         if: failure()
         uses: actions/upload-artifact@v4
@@ -399,7 +397,6 @@ jobs:
         with:
           name: Engine
           path: Engine.txz
-
       - name: Upload Checksums
         if: success()
         uses: actions/upload-artifact@v4
