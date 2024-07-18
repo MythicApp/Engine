@@ -55,9 +55,8 @@ jobs:
     
 
         
-        Expand All
     
-    @@ -63,13 +60,13 @@ jobs:
+jobs:
   
           curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb > mingw-w64.rb && brew install mingw-w64.rb
           rm mingw-w64.rb
