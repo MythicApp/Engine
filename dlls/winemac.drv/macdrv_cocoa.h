@@ -266,6 +266,7 @@ extern int macdrv_start_cocoa_app(unsigned long long tickcount) DECLSPEC_HIDDEN;
 extern void macdrv_window_rejected_focus(const struct macdrv_event *event) DECLSPEC_HIDDEN;
 extern void macdrv_beep(void) DECLSPEC_HIDDEN;
 extern void macdrv_set_application_icon(CFArrayRef images, CFURLRef url /* CrossOver Hack 13440 */) DECLSPEC_HIDDEN;
+extern void macdrv_set_application_name(CFStringRef name) DECLSPEC_HIDDEN; /* Whisky hack #9 */
 extern void macdrv_quit_reply(int reply) DECLSPEC_HIDDEN;
 extern int macdrv_using_input_method(void) DECLSPEC_HIDDEN;
 extern void macdrv_set_mouse_capture_window(macdrv_window window) DECLSPEC_HIDDEN;

@@ -1355,6 +1355,34 @@ static void set_app_icon(void)
     }
 }
 
+/* Whisky hack #9 */
+/***********************************************************************
+ *              set_app_name
+ */
+static void set_app_name(void)
+{
+    WCHAR app_name[MAX_PATH];
+    DWORD len = GetModuleFileNameW(0, app_name, ARRAY_SIZE(app_name));
+
+    // Get offset to the last backslash
+    DWORD last_char_pos = 0;
+    for (DWORD i = 0; i < len; i++)
+    {
+        if (app_name[i] == '\\')
+            last_char_pos = i;
+    }
+
+    if (len && len < ARRAY_SIZE(app_name))
+    {
+        CFStringRef name = CFStringCreateWithCharacters(NULL, app_name + last_char_pos + 1, len - last_char_pos - 1);
+        if (name)
+        {
+            macdrv_set_application_name(name);
+            CFRelease(name);
+        }
+    }
+}
+
 
 /**********************************************************************
  *		        set_capture_window_for_move
@@ -1661,6 +1689,8 @@ BOOL macdrv_CreateDesktopWindow(HWND hwnd)
     }
 
     set_app_icon();
+    /* Whisky hack #9 */
+    set_app_name();
     return TRUE;
 }
 
