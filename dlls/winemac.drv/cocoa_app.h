@@ -67,8 +67,8 @@ enum {
 };
 
 /* Whisky hack #9 */
-#define kAppNameText @"%@ (Myt" \
-                     @"hic)"
+#define kAppNameText @"%@ (Whi" \
+                     @"sky)"
 
 
 @class WineEventQueue;
