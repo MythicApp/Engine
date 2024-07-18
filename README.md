@@ -27,7 +27,7 @@ Also note that GPTKv2 is currently still in its beta phase; bugs and hiccups are
 
 # wine
 
-# 1. INTRODUCTION
+## 1. INTRODUCTION
 
 Wine is a program which allows running Microsoft Windows programs
 (including DOS, Windows 3.x, Win32, and Win64 executables) on Unix.
@@ -40,7 +40,7 @@ Wine is free software, released under the GNU LGPL; see the file
 LICENSE for the details.
 
 
-# 2. QUICK START
+## 2. QUICK START
 
 From the top-level directory of the Wine source (which contains this file),
 run:
@@ -63,7 +63,7 @@ resolution, read the rest of this file, the Wine man page, and
 especially the wealth of information found at https://www.winehq.org.
 
 
-# 3. REQUIREMENTS
+## 3. REQUIREMENTS
 
 To compile and run Wine, you must have one of the following:
 
@@ -77,34 +77,34 @@ As Wine requires kernel-level thread support to run, only the operating
 systems mentioned above are supported.  Other operating systems which
 support kernel threads may be supported in the future.
 
-## FreeBSD info:
+### FreeBSD info:
   Wine will generally not work properly on versions before FreeBSD 8.0.
   See https://wiki.freebsd.org/Wine for more information.
 
-## Solaris info:
+### Solaris info:
   You will most likely need to build Wine with the GNU toolchain
   (gcc, gas, etc.). Warning : installing gas does *not* ensure that it
   will be used by gcc. Recompiling gcc after installing gas or
   symlinking cc, as and ld to the gnu tools is said to be necessary.
 
-## NetBSD info:
+### NetBSD info:
   Make sure you have the USER_LDT, SYSVSHM, SYSVSEM, and SYSVMSG options
   turned on in your kernel.
 
-## Mac OS X info:
+### Mac OS X info:
   You need Xcode/Xcode Command Line Tools or Apple cctools.  The
   minimum requirements for compiling Wine are clang 3.8 with the
   MacOSX10.10.sdk and mingw-w64 v8.  The MacOSX10.14.sdk and later can
   only build wine64.
 
 
-## Supported file systems:
+### Supported file systems:
   Wine should run on most file systems. A few compatibility problems
   have also been reported using files accessed through Samba. Also,
   NTFS does not provide all the file system features needed by some
   applications.  Using a native Unix file system is recommended.
 
-## Basic requirements:
+### Basic requirements:
   You need to have the X11 development include files installed
   (called xorg-dev in Debian and libX11-devel in Red Hat).
 
@@ -112,7 +112,7 @@ support kernel threads may be supported in the future.
 
   You also need flex version 2.5.33 or later and bison.
 
-## Optional support libraries:
+### Optional support libraries:
   Configure will display notices when optional libraries are not found
   on your system. See https://wiki.winehq.org/Recommended_Packages for
   hints about the packages you should install. On 64-bit platforms,
@@ -120,7 +120,7 @@ support kernel threads may be supported in the future.
   libraries.
 
 
-# 4. COMPILATION
+## 4. COMPILATION
 
 To build Wine, do:
 
@@ -139,7 +139,7 @@ To see compile configuration options, do ./configure --help.
 For more information, see https://wiki.winehq.org/Building_Wine
 
 
-# 5. SETUP
+## 5. SETUP
 
 Once Wine has been built correctly, you can do "make install"; this
 will install the wine executable and libraries, the Wine man page, and
@@ -153,7 +153,7 @@ Once installed, you can run the "winecfg" configuration tool. See the
 Support area at https://www.winehq.org/ for configuration hints.
 
 
-# 6. RUNNING PROGRAMS
+## 6. RUNNING PROGRAMS
 
 When invoking Wine, you may specify the entire path to the executable,
 or a filename only.
@@ -176,27 +176,27 @@ will get a crash log that you should attach to your report when filing
 a bug.
 
 
-# 7. GETTING MORE INFORMATION
+## 7. GETTING MORE INFORMATION
 
-## WWW:	A great deal of information about Wine is available from WineHQ at
+### WWW:	A great deal of information about Wine is available from WineHQ at
 	https://www.winehq.org/ : various Wine Guides, application database,
 	bug tracking. This is probably the best starting point.
 
-## FAQ:	The Wine FAQ is located at https://www.winehq.org/FAQ
+### FAQ:	The Wine FAQ is located at https://www.winehq.org/FAQ
 
-## Wiki:	The Wine Wiki is located at https://wiki.winehq.org
+### Wiki:	The Wine Wiki is located at https://wiki.winehq.org
 
-## Mailing lists:
+### Mailing lists:
 	There are several mailing lists for Wine users and developers;
 	see https://www.winehq.org/forums for more information.
 
-## Bugs:	Report bugs to Wine Bugzilla at https://bugs.winehq.org
+### Bugs:	Report bugs to Wine Bugzilla at https://bugs.winehq.org
 	Please search the bugzilla database to check whether your
 	problem is already known or fixed before posting a bug report.
 
-## IRC:	Online help is available at channel #WineHQ on irc.libera.chat.
+### IRC:	Online help is available at channel #WineHQ on irc.libera.chat.
 
-## Git:	The current Wine development tree is available through Git.
+### Git:	The current Wine development tree is available through Git.
 	Go to https://www.winehq.org/git for more information.
 
 If you add something, or fix a bug, please send a patch (preferably
