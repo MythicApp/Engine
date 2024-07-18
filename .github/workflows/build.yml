@@ -194,9 +194,7 @@ jobs:
       - name: Copy External Libraries
         run: |
           LIBS=(
-              "libaribb24.0"
               "libbluray.2"
-              "libfontconfig.1"
               "libfreetype"
               "libfreetype.6"
               "libgio-2.0.0"
@@ -224,7 +222,6 @@ jobs:
               "libgsttranscoder-1.0.0"
               "libgstvideo-1.0.0"
               "libgthread-2.0.0"
-              "libharfbuzz.0"
               "libhogweed.6"
               "libidn2.0"
               "libintl.8"
@@ -244,21 +241,12 @@ jobs:
               "liborc-0.4.0"
               "libp11-kit.0"
               "libpcre2-8.0"
-              "libpostproc.57"
               "libpng16.16"
-              "libpugixml.1"
-              "librav1e.0.7"
               "librist.4"
               "librubberband.2"
-              "libsamplerate.0"
               "libSDL2-2.0.0"
-              "libsoxr.0"
-              "libsrt.1.5"
               "libtasn1.6"
-              "libtbb.12"
               "libunistring.5"
-              "libvidstab.1.2"
-              "libvmaf.3"
               "libvorbis.0"
               "libvorbisenc.2"
               "libvpx.8"
@@ -271,8 +259,6 @@ jobs:
               "libx264.164"
               "libx265.209"
               "libxcb.1"
-              "libzimg.2"
-              "libzmq.5"
           )
           FFMPEG_LIBS=(
             "libavfilter.9"
