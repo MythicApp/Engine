@@ -158,31 +158,6 @@ BOOL WINAPI MoveFileTransactedW(const WCHAR *source, const WCHAR *dest, LPPROGRE
     return FALSE;
 }
 
-/*************************************************************************
- *           CreateFileTransactedA   (KERNEL32.@)
- */
-HANDLE WINAPI DECLSPEC_HOTPATCH CreateFileTransactedA( LPCSTR name, DWORD access, DWORD sharing,
-                                                       LPSECURITY_ATTRIBUTES sa, DWORD creation,
-                                                       DWORD attributes, HANDLE template,
-                                                       HANDLE transaction, PUSHORT version,
-                                                       PVOID param )
-{
-    FIXME("(%s %lx %lx %p %lx %lx %p %p %p %p): semi-stub\n", debugstr_a(name), access, sharing, sa, creation, attributes, template, transaction, version, param);
-    return CreateFileA(name, access, sharing, sa, creation, attributes, template);
-}
-
-/*************************************************************************
- *           CreateFileTransactedW   (KERNEL32.@)
- */
-HANDLE WINAPI DECLSPEC_HOTPATCH CreateFileTransactedW( LPCWSTR name, DWORD access, DWORD sharing,
-                                                       LPSECURITY_ATTRIBUTES sa, DWORD creation,
-                                                       DWORD attributes, HANDLE template, HANDLE transaction,
-                                                       PUSHORT version, PVOID param )
-{
-    FIXME("(%s %lx %lx %p %lx %lx %p %p %p %p): semi-stub\n", debugstr_w(name), access, sharing, sa, creation, attributes, template, transaction, version, param);
-    return CreateFileW(name, access, sharing, sa, creation, attributes, template);
-}
-
 /**************************************************************************
  *           MoveFileWithProgressA   (KERNEL32.@)
  */

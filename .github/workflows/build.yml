@@ -52,9 +52,6 @@ jobs:
 
           brew install "${REQUIRED_PACKAGES[@]}"
 
-      - name: Install mingw
-        continue-on-error: true
-        run: |
           # As of mingw-w64 12, brew uses UCRT instead of MSVCRT
           # Wine will fail to build with UCRT, so we must rollback.
 
@@ -63,13 +60,13 @@ jobs:
 
       - name: Echo Libs [DEBUG]
         run: |
-          echo "Brew Libs"
+          echo "Brew Libs\n========="
           ls $(brew --prefix)/lib
 
-          echo "FFmpeg Libs" 
+          echo "FFmpeg Libs\n===========" 
           ls $(brew --prefix ffmpeg@6)/lib
 
-          echo "GStreamer Libs"
+          echo "GStreamer Libs\n=============="
           ls $(brew --prefix gstreamer)/lib/gstreamer-1.0
 
       - name: Add bison & cx-llvm to $PATH
@@ -251,22 +248,13 @@ jobs:
               "libidn2.0"
               "libintl.8"
               "libjpeg.8"
-              "libjxl.0.10"
-              "libjxl_threads.0.10"
               "libMoltenVK"
               "libnettle.8"
-              "libogg.0"
-              "libopenvino.2410"
-              "libopenvino_c.2410"
-              "libopenvino_onnx_frontend.2410"
-              "libopenvino_paddle_frontend.2410"
-              "libopenvino_pytorch_frontend.2410"
-              "libopenvino_tensorflow_frontend.2410"
-              "libopenvino_tensorflow_lite_frontend.2410"
               "liborc-0.4.0"
               "libp11-kit.0"
               "libpcre2-8.0"
               "libpng16.16"
+<<<<<<< HEAD
               "librist.4"
               "librubberband.2"
               "libSDL2-2.0.0"
@@ -274,15 +262,16 @@ jobs:
               "libunistring.5"
               "libvorbis.0"
               "libvorbisenc.2"
+=======
+              "libSDL2-2.0.0"
+              "libtasn1.6"
+              "libunistring.5"
+>>>>>>> parent of 35744b300a0 (Merge remote-tracking branch 'upstream/7.7' into 7.7)
               "libvpx.8"
-              "libwebp.7"
-              "libwebpmux.3"
               "libXau.6"
               "libXdmcp.6"
               "libX11.6"
               "libX11-xcb.1"
-              "libx264.164"
-              "libx265.209"
               "libxcb.1"
           )
 
