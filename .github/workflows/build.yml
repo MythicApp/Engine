@@ -36,8 +36,10 @@ jobs:
               "bison"
               "pkg-config"
               "gcenx/wine/cx-llvm"
+
               # Utilities (DXVK)
               "jq"
+
               # Dependencies
               "freetype"
               "gettext"
@@ -47,31 +49,41 @@ jobs:
               "molten-vk"
               "winetricks"
           )
+
           brew install "${REQUIRED_PACKAGES[@]}"
+
       - name: Install mingw
         continue-on-error: true
         run: |
           # As of mingw-w64 12, brew uses UCRT instead of MSVCRT
           # Wine will fail to build with UCRT, so we must rollback.
+
           curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb > mingw-w64.rb && brew install mingw-w64.rb
           rm mingw-w64.rb
+
       - name: Echo Libs [DEBUG]
         run: |
-          echo "Brew Libs"
+          echo "Brew Libs\n========="
           ls $(brew --prefix)/lib
-          echo "FFmpeg Libs" 
+
+          echo "FFmpeg Libs\n===========" 
           ls $(brew --prefix ffmpeg@6)/lib
-          echo "GStreamer Libs"
+
+          echo "GStreamer Libs\n=============="
           ls $(brew --prefix gstreamer)/lib/gstreamer-1.0
+
       - name: Add bison & cx-llvm to $PATH
         run: |
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
           echo "$(brew --prefix cx-llvm)/bin" >> $GITHUB_PATH
+
       - name: Configure wine64
         run: |
           set -x
+
           export ac_cv_lib_soname_MoltenVK="libMoltenVK.dylib"
           export ac_cv_lib_soname_vulkan=""
+
           mkdir -p ${{ env.BUILDROOT }}/wine64
           pushd ${{ env.BUILDROOT }}/wine64
           ${{ env.WINE_CONFIGURE }} \
@@ -110,11 +122,13 @@ jobs:
             --with-vulkan \
             --without-x 
           popd
+
       - name: Build wine64
         run: |
           pushd ${{ env.BUILDROOT }}/wine64
           make -j$(sysctl -n hw.ncpu 2>/dev/null)
           popd
+
       - name: Install wine64
         run: |
           pushd ${{ env.BUILDROOT }}/wine64
@@ -124,8 +138,10 @@ jobs:
       - name: Configure wine32on64
         run: |
           set -x
+
           export ac_cv_lib_soname_MoltenVK="libMoltenVK.dylib"
           export ac_cv_lib_soname_vulkan=""
+
           mkdir -p ${{ env.BUILDROOT }}/wine32on64
           pushd ${{ env.BUILDROOT }}/wine32on64
           ${{ env.WINE_CONFIGURE }} \
@@ -168,33 +184,39 @@ jobs:
             --with-wine64=${{ env.BUILDROOT }}/wine64 \
             --without-x
           popd
+
       - name: Build wine32on64
         run: |
           pushd ${{ env.BUILDROOT }}/wine32on64
           make -j$(sysctl -n hw.ncpu 2>/dev/null)
           popd
+
       - name: Install wine32on64
         run: |
           pushd ${{ env.BUILDROOT }}/wine32on64
           make install-lib DESTDIR="$GITHUB_WORKSPACE/${{ env.WINE_INSTALLROOT }}"
           popd
-      - name: Fetch Winetricks Verbs
+
+      - name: Grab Verbs From Winetricks
         run: |
           curl -L -o verbs.txt https://raw.githubusercontent.com/Winetricks/winetricks/master/files/verbs/all.txt
-      - name: Assemble Engine Folder
+
+      - name: Create Final Package
         run: |
-          mkdir -p Engine/DXVK
-          mkdir -p Engine/wine
-          cp -a ${{ env.WINE_INSTALLROOT }}/. Engine/wine/
-          rm -rf Engine/wine/share/man
-          cp -a verbs.txt Engine
-          cp -a properties.plist Engine
-          cp -a $(brew --prefix winetricks)/bin/winetricks Engine
-          cp -a DXVK Engine
-      - name: Copy External Libraries
+          mkdir -p Libraries/DXVK
+          mkdir -p Libraries/Wine
+
+          cp -a ${{ env.WINE_INSTALLROOT }}/. Libraries/Wine/
+
+          rm -rf Libraries/Wine/share/man
+
+          cp -a $(brew --prefix winetricks)/bin/winetricks Libraries
+          cp -a verbs.txt Libraries
+          cp -a DXVK Libraries
+
+      - name: Copy External Libs
         run: |
           LIBS=(
-              "libbluray.2"
               "libfreetype"
               "libfreetype.6"
               "libgio-2.0.0"
@@ -226,49 +248,31 @@ jobs:
               "libidn2.0"
               "libintl.8"
               "libjpeg.8"
-              "libjxl.0.10"
-              "libjxl_threads.0.10"
               "libMoltenVK"
               "libnettle.8"
-              "libogg.0"
-              "libopenvino.2410"
-              "libopenvino_c.2410"
-              "libopenvino_onnx_frontend.2410"
-              "libopenvino_paddle_frontend.2410"
-              "libopenvino_pytorch_frontend.2410"
-              "libopenvino_tensorflow_frontend.2410"
-              "libopenvino_tensorflow_lite_frontend.2410"
               "liborc-0.4.0"
               "libp11-kit.0"
               "libpcre2-8.0"
               "libpng16.16"
-              "librist.4"
-              "librubberband.2"
               "libSDL2-2.0.0"
               "libtasn1.6"
               "libunistring.5"
-              "libvorbis.0"
-              "libvorbisenc.2"
-              "libvpx.8"
-              "libwebp.7"
-              "libwebpmux.3"
               "libXau.6"
               "libXdmcp.6"
               "libX11.6"
               "libX11-xcb.1"
-              "libx264.164"
-              "libx265.209"
               "libxcb.1"
           )
+
           FFMPEG_LIBS=(
             "libavfilter.9"
             "libavformat.60"
             "libavcodec.60"
             "libavutil.58"
-            "libpostproc.57"
             "libswresample.4"
             "libswscale.7"
           )
+
           GSTREAMER_LIBS=(
               "libgstapplemedia"
               "libgstasf"
@@ -290,27 +294,36 @@ jobs:
               "libgstvideoparsersbad"
               "libgstwavparse"
           )
+
           for i in "${LIBS[@]}"
           do
-              cp -Lr $(brew --prefix)/lib/"$i".dylib Engine/wine/lib
+              cp -Lr $(brew --prefix)/lib/"$i".dylib Libraries/Wine/lib
           done
+
           for i in "${FFMPEG_LIBS[@]}"
           do
-              cp -Lr $(brew --prefix ffmpeg@6)/lib/"$i".dylib Engine/wine/lib
+              cp -Lr $(brew --prefix ffmpeg@6)/lib/"$i".dylib Libraries/Wine/lib
           done
-          mkdir Engine/wine/lib/gstreamer-1.0
+
+          mkdir Libraries/Wine/lib/gstreamer-1.0
+
           for i in "${GSTREAMER_LIBS[@]}"
           do
-              cp -Lr $(brew --prefix gstreamer)/lib/gstreamer-1.0/"$i".dylib Engine/wine/lib/gstreamer-1.0
+              cp -Lr $(brew --prefix gstreamer)/lib/gstreamer-1.0/"$i".dylib Libraries/Wine/lib/gstreamer-1.0
           done
-          cp -a $(brew --prefix gstreamer)/lib/gstreamer-1.0/include Engine/wine/lib/gstreamer-1.0
+
+          cp -a $(brew --prefix gstreamer)/lib/gstreamer-1.0/include Libraries/Wine/lib/gstreamer-1.0
+
           # Fixup brew dylib LCs
+
           update_dylib_paths() {
               local dylib_file="$1"
               local path_prefix="$2"
               echo "Processing $dylib_file..."
+
               # Extract LC_LOAD_DYLIB paths using otool
               local load_dylibs=$(otool -L "$dylib_file" | grep -v "$dylib_file" | awk '{print $1}')
+
               for path in $load_dylibs; do
                   if [[ $path != /usr/lib* && $path != /System/* ]]; then
                       # For paths not excluded, replace the prefix with @loader_path/
@@ -323,21 +336,33 @@ jobs:
                   fi
               done
           }
+
           export -f update_dylib_paths
-          find Engine/wine/lib -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/"' {} \;
-          find Engine/wine/lib/gstreamer-1.0 -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/../"' {} \;
-          update_dylib_paths Engine/wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
-      - name: Copy GPTK Libraries
+
+          find Libraries/Wine/lib -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/"' {} \;
+          find Libraries/Wine/lib/gstreamer-1.0 -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/../"' {} \;
+
+          update_dylib_paths Libraries/Wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
+
+      - name: Install GPTK
         run: |
-          ditto GPTK/redist/lib/ Engine/wine/lib/
-      - name: Download & Install Wine Mono
+          ditto GPTK/redist/lib/ Libraries/Wine/lib/
+
+      - name: Copy Version .plist
         run: |
-          mkdir Engine/wine/share/wine/mono
+          cp -a WhiskyWineVersion.plist Libraries/
+
+      - name: Install WineMono
+        run: |
+          mkdir Libraries/Wine/share/wine/mono
+
           curl -L -o mono.tar.xz ${{ env.WINE_MONO }}
-          tar -xzf mono.tar.xz -C Engine/wine/share/wine/mono
-      - name: Calculate Checksums
-        run: >
-          find ./Engine -type f -exec shasum "{}" + > checksums.sha
+          tar -xzf mono.tar.xz -C Libraries/Wine/share/wine/mono
+
+      - name: Build Checksum
+        run: |
+          find ./Libraries -type f -exec shasum "{}" + > SUMS.sha
+
       - name: Upload config64.log
         if: failure()
         uses: actions/upload-artifact@v4
@@ -352,21 +377,36 @@ jobs:
           name: config32
           path: build/wine32on64/config.log
   
-      - name: Compress Files
+      - name: Tar Libraries
         if: success()
-        run: >
-          tar -cJf Engine.txz Engine
+        run: |
+          tar -zcf Libraries.tar.gz Libraries
           
-      - name: Upload Engine
+      - name: Upload Libraries
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Engine
-          path: Engine.txz
+          name: Libraries
+          path: Libraries.tar.gz
 
-      - name: Upload Checksums
+      - name: Upload SUMS
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Checksums
-          path: checksums.sha
+          name: SUMS
+          path: SUMS.sha
+
+      - name: Upload Libraries to WhiskyBucket
+        if: ${{ github.ref == 'refs/heads/7.7' }}
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ENV_AUTH: true
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.RCLONE_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.RCLONE_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.RCLONE_ENDPOINT }}
+        run: |
+          brew install rclone
+          rclone copy Libraries.tar.gz r2:whisky-bucket/Wine
+          rclone copy WhiskyWineVersion.plist r2:whisky-bucket/Wine
+          rclone copy SUMS.sha r2:whisky-bucket/Wine
