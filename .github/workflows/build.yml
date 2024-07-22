@@ -194,26 +194,29 @@ jobs:
           make install-lib DESTDIR="$GITHUB_WORKSPACE/${{ env.WINE_INSTALLROOT }}"
           popd
 
-      - name: Grab Verbs From Winetricks
+      - name: Fetch Winetricks Verbs
         run: |
           curl -L -o verbs.txt https://raw.githubusercontent.com/Winetricks/winetricks/master/files/verbs/all.txt
 
-      - name: Create Final Package
+      - name: Assemble Engine Folder
         run: |
-          mkdir -p Libraries/DXVK
-          mkdir -p Libraries/Wine
+          mkdir -p Engine/DXVK
+          mkdir -p Engine/wine
 
-          cp -a ${{ env.WINE_INSTALLROOT }}/. Libraries/Wine/
+          cp -a ${{ env.WINE_INSTALLROOT }}/. Engine/wine/
 
-          rm -rf Libraries/Wine/share/man
+          rm -rf Engine/wine/share/man
 
-          cp -a $(brew --prefix winetricks)/bin/winetricks Libraries
-          cp -a verbs.txt Libraries
-          cp -a DXVK Libraries
+          cp -a verbs.txt Engine
+          cp -a properties.plist Engine
 
-      - name: Copy External Libs
+          cp -a $(brew --prefix winetricks)/bin/winetricks Engine
+          cp -a DXVK Engine
+
+      - name: Copy External Libraries
         run: |
           LIBS=(
+              "libbluray.2"
               "libfreetype"
               "libfreetype.6"
               "libgio-2.0.0"
@@ -254,6 +257,7 @@ jobs:
               "libSDL2-2.0.0"
               "libtasn1.6"
               "libunistring.5"
+              "libvpx.8"
               "libXau.6"
               "libXdmcp.6"
               "libX11.6"
@@ -266,6 +270,7 @@ jobs:
             "libavformat.60"
             "libavcodec.60"
             "libavutil.58"
+            "libpostproc.57"
             "libswresample.4"
             "libswscale.7"
           )
@@ -294,22 +299,22 @@ jobs:
 
           for i in "${LIBS[@]}"
           do
-              cp -Lr $(brew --prefix)/lib/"$i".dylib Libraries/Wine/lib
+              cp -Lr $(brew --prefix)/lib/"$i".dylib Engine/wine/lib
           done
 
           for i in "${FFMPEG_LIBS[@]}"
           do
-              cp -Lr $(brew --prefix ffmpeg@6)/lib/"$i".dylib Libraries/Wine/lib
+              cp -Lr $(brew --prefix ffmpeg@6)/lib/"$i".dylib Engine/wine/lib
           done
 
-          mkdir Libraries/Wine/lib/gstreamer-1.0
+          mkdir Engine/wine/lib/gstreamer-1.0
 
           for i in "${GSTREAMER_LIBS[@]}"
           do
-              cp -Lr $(brew --prefix gstreamer)/lib/gstreamer-1.0/"$i".dylib Libraries/Wine/lib/gstreamer-1.0
+              cp -Lr $(brew --prefix gstreamer)/lib/gstreamer-1.0/"$i".dylib Engine/wine/lib/gstreamer-1.0
           done
 
-          cp -a $(brew --prefix gstreamer)/lib/gstreamer-1.0/include Libraries/Wine/lib/gstreamer-1.0
+          cp -a $(brew --prefix gstreamer)/lib/gstreamer-1.0/include Engine/wine/lib/gstreamer-1.0
 
           # Fixup brew dylib LCs
 
@@ -336,29 +341,25 @@ jobs:
 
           export -f update_dylib_paths
 
-          find Libraries/Wine/lib -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/"' {} \;
-          find Libraries/Wine/lib/gstreamer-1.0 -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/../"' {} \;
+          find Engine/wine/lib -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/"' {} \;
+          find Engine/wine/lib/gstreamer-1.0 -maxdepth 1 -type f -name '*.dylib' -exec bash -c 'update_dylib_paths "$0" "@loader_path/../"' {} \;
 
-          update_dylib_paths Libraries/Wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
+          update_dylib_paths Engine/wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
 
-      - name: Install GPTK
+      - name: Copy GPTK Libraries
         run: |
-          ditto GPTK/redist/lib/ Libraries/Wine/lib/
+          ditto GPTK/redist/lib/ Engine/wine/lib/
 
-      - name: Copy Version .plist
+      - name: Download & Install Wine Mono
         run: |
-          cp -a WhiskyWineVersion.plist Libraries/
-
-      - name: Install WineMono
-        run: |
-          mkdir Libraries/Wine/share/wine/mono
+          mkdir Engine/wine/share/wine/mono
 
           curl -L -o mono.tar.xz ${{ env.WINE_MONO }}
-          tar -xzf mono.tar.xz -C Libraries/Wine/share/wine/mono
+          tar -xzf mono.tar.xz -C Engine/wine/share/wine/mono
 
-      - name: Build Checksum
-        run: |
-          find ./Libraries -type f -exec shasum "{}" + > SUMS.sha
+      - name: Calculate Checksums
+        run: >
+          find ./Engine -type f -exec shasum "{}" + > checksums.sha
 
       - name: Upload config64.log
         if: failure()
@@ -374,36 +375,21 @@ jobs:
           name: config32
           path: build/wine32on64/config.log
   
-      - name: Tar Libraries
+      - name: Compress Files
         if: success()
-        run: |
-          tar -zcf Libraries.tar.gz Libraries
+        run: >
+          tar -cJf Engine.txz Engine
           
-      - name: Upload Libraries
+      - name: Upload Engine
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: Libraries
-          path: Libraries.tar.gz
+          name: Engine
+          path: Engine.txz
 
-      - name: Upload SUMS
+      - name: Upload Checksums
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: SUMS
-          path: SUMS.sha
-
-      - name: Upload Libraries to WhiskyBucket
-        if: ${{ github.ref == 'refs/heads/7.7' }}
-        env:
-          RCLONE_CONFIG_R2_TYPE: s3
-          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
-          RCLONE_CONFIG_R2_ENV_AUTH: true
-          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.RCLONE_ACCESS_KEY_ID }}
-          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.RCLONE_SECRET_ACCESS_KEY }}
-          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.RCLONE_ENDPOINT }}
-        run: |
-          brew install rclone
-          rclone copy Libraries.tar.gz r2:whisky-bucket/Wine
-          rclone copy WhiskyWineVersion.plist r2:whisky-bucket/Wine
-          rclone copy SUMS.sha r2:whisky-bucket/Wine
+          name: Checksums
+          path: checksums.sha
