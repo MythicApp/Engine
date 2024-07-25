@@ -394,7 +394,6 @@ static NSString* WineLocalizedString(unsigned int stringID)
             bool success = [self setProcessName:appName];
             if (!success)
                 NSLog(@"Failed to set process name to %@", appName);
-            [appName release];
         }
     }
 
