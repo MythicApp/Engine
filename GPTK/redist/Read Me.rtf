@@ -1,7 +1,7 @@
-{\rtf1\ansi\ansicpg1252\cocoartf2761
+{\rtf1\ansi\ansicpg1252\cocoartf2814
 \cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fmodern\fcharset0 CourierNewPS-BoldMT;
-\f3\fnil\fcharset0 Menlo-Regular;\f4\fnil\fcharset0 LucidaGrande;\f5\fswiss\fcharset0 Helvetica-Oblique;
-}
+\f3\fnil\fcharset0 Menlo-Regular;\f4\fnil\fcharset0 LucidaGrande;\f5\fmodern\fcharset0 CourierNewPSMT;
+\f6\fswiss\fcharset0 Helvetica-Oblique;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
 {\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
@@ -108,7 +108,7 @@ ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.0/redist/lib
 \pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\sb240\pardirnatural\partightenfactor0
 \ls5\ilvl0\cf0 {\listtext	\uc0\u8226 	}
 \f0\b CrossOver
-\f1\b0 : replace CrossOver\'92s copies of the D3DMetal.framework and libd3dshared.dylib found at ~/Library/Application Support/com.isaacmarovitz.Whisky/Libraries/Wine/lib/external/ with the libraries from this distribution:\
+\f1\b0 : replace CrossOver\'92s copies of the D3DMetal.framework and libd3dshared.dylib found at /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/lib64/apple_gptk/external with the libraries from this distribution:\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1438\fi-3\sb120\pardirnatural\partightenfactor0
 
 \f3 \cf0 cd /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/lib64/apple_gptk/external\
@@ -291,6 +291,25 @@ Launches your game without the extended Metal Performance HUD visible.\
 \f1 \cf0 \
 Finally, the no-esync versions of the script disable Wine's ESYNC option, a common compatibility flag. If your game experiences issues with multithreading, or you get an error message about running out of files, you can try launching your game without this Wine environment variable enabled to see if disabling esync clears the problem.\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9060\pardirnatural\partightenfactor0
+
+\f0\b\fs28 \cf0 Environment Variables\
+
+\f1\b0\fs24 \
+Environment variables can be used to control some aspects of translation and emulation in the evaluation environment.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9060\li1331\fi-853\pardirnatural\partightenfactor0
+
+\f2\b \cf0 D3DM_SUPPORT_DXR
+\f1\b0  - Defaults to 0 (OFF). On M3 Macs, setting this environment variable to 1 (ON) enables DirectX Raytracing (aka DXR) features in D3DMetal\'92s DirectX 12 translation layer, so games querying for DXR support will find the support level and expected interfaces of DXR.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9060\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9060\li1331\fi-854\pardirnatural\partightenfactor0
+
+\f2\b \cf0 ROSETTA_ADVERTISE_AVX
+\f1\b0  - Defaults to 0 (OFF). On macOS 15 Sequoia, setting this environment variable to 1 (ON) causes the CPU instruction translation layer to publish cpuid information to translated applications when running in the evaluation environment, so games querying instruction set extension capabilities before utilizing them can conditionally control their use of instruction extensions. This setting does not modify the availability of the instruction set in Rosetta; it only controls whether the processor advertises its support for these extensions.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\b\fs28 \cf0 Logging
@@ -309,15 +328,67 @@ Logging output will appear in the Terminal window in which you launch your game 
 \f1\b0 \
 \
 
-\f0\b\fs28 Troubleshooting
+\f0\b\fs28 Debugging your game with Metal debugger\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\tx9060\li1331\fi-853\pardirnatural\partightenfactor0
+
+\f2\fs24 \cf0 Note: You will need to disable System Integrity Protection (SIP) ({\field{\*\fldinst{HYPERLINK "https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection"}}{\fldrslt 
+\f1\b0 https://developer.apple.com/documentation/security/disabling_and_enabling_system_integrity_protection}}
+\f1\b0 )
+\f2\b  to debug CrossOver's Wine processes. Reenable SIP after you finish debugging.\
+\pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\sb240\pardirnatural\partightenfactor0
+
+\f1\b0 \cf0 	\'95	Compile your shaders with embedded debug information ({\field{\*\fldinst{HYPERLINK "https://developer.apple.com/metal/shader-converter/#shader"}}{\fldrslt https://developer.apple.com/metal/shader-converter/#shader}}) by passing 
+\f3 -Zi -Qembed_debug
+\f1  to the DX Compiler.\
+	\'95	In CrossOver, select a bottle to launch your game from.\
+	\'95	Enable D3DMetal in the Advanced Settings for the bottle.\
+	\'95	Launch your game by clicking Run Command, choosing your game executable, and inserting the following environment variables to enable Metal debugging and processing of debug information: 
+\f2\b MTL_CAPTURE_ENABLED=1 D3DM_DXIL_PROCESS_DEBUG_INFORMATION=1\
+
+\f1\b0 	\'95	In Xcode, click 
+\f3 Debug > Debug Executable\'85
+\f1  from the menubar and select CrossOver.app (this is just to get a workspace window open)\
+	\'95	In the visible Scheme options, click the 
+\f3 Options
+\f1  tab and change 
+\f3 GPU Frame Capture
+\f1  from 
+\f3 Automatically
+\f1  to 
+\f3 Metal
+\f1 .\
+	\'95	Close Scheme.\
+	\'95	Click 
+\f3 Debug > Attach to Process
+\f1  from the menubar and select your launched game process.\
+	\'95	After the debugger attaches to the process, you can capture your Metal workload ({\field{\*\fldinst{HYPERLINK "https://developer.apple.com/documentation/xcode/capturing-a-metal-workload-in-xcode#Capture-your-Metal-workload-while-debugging"}}{\fldrslt https://developer.apple.com/documentation/xcode/capturing-a-metal-workload-in-xcode#Capture-your-Metal-workload-while-debugging}}).\
+\
+\pard\pardeftab720\partightenfactor0
+\cf0 If lldb suspends the process due to handling 
+\f3 SIGUSR1
+\f1 , you will need to run the following commands to ignore this signal and continue the process:\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li961\fi1\pardirnatural\partightenfactor0
+
+\f3 \cf0 process handle -pass false -stop false -notify false SIGUSR1\
+continue
+\f1 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\b\fs28 \cf0 Troubleshooting
 \f1\b0\fs24 \
 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b \cf0 My game won't run and crashes with an invalid instruction
+\f0\b \cf0 My game won't run and crashes with an invalid instruction or complains about lack of certain instruction extensions
 \f1\b0 \
 \
-Invalid instruction crashes are sometimes caused when Rosetta 2 is unable to translate instructions. You may be able to recompile a version of your game without certain instructions in order to evaluate its potential on Apple Silicon with the Game Porting Toolkit when you hit this error. When porting your code natively to Apple Silicon there are a variety or NEON and ARM instructions which offer high-performance replacements for AVX/AVX2, BMI1/2, F16c and other less common instruction set extensions.\
+Invalid instruction crashes are sometimes caused when the Rosetta 2 instruction translation layer is unable to translate CPU instructions. You may be able to recompile a version of your game without certain instructions in order to evaluate its potential on Apple Silicon with the Game Porting Toolkit when you hit this error. You may also be able to use the 
+\f5 ROSETTA_ADVERTISE_AVX
+\f1  environment variable to ensure your game recognizes available translation instruction extensions. When porting your code natively to Apple Silicon there are a variety or NEON and ARM instructions which offer high-performance replacements for AVX / AVX2, BMI, F16c and other less common instruction set extensions.\
 \
 
 \f0\b My game won't run because its anti-cheat or DRM software is incompatible with Wine translation.\
@@ -340,7 +411,7 @@ If your game checks for a specific minimum or an exact build version, you can al
 \f1  values of the 
 \f3 HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT
 \f1  registry key. You must perform this step 
-\f5\i after
+\f6\i after
 \f1\i0  selecting a Windows version in winecfg. Run the following commands, replacing 
 \f3 \'abBUILD_NUMBER\'bb
 \f1  with the specific build number your game checks for:\

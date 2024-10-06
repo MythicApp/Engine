@@ -2212,6 +2212,12 @@ static NTSTATUS perform_relocations( void *module, IMAGE_NT_HEADERS *nt, SIZE_T 
     return STATUS_SUCCESS;
 }
 
+#ifdef __x86_64__
+
+static void apply_binary_patches( WINE_MODREF* wm );
+static void apply_fuzzy_binary_patches( WINE_MODREF* wm );
+
+#endif
 
 /*************************************************************************
  *		build_module
@@ -2299,7 +2305,17 @@ static NTSTATUS build_module( LPCWSTR load_path, const UNICODE_STRING *nt_name, 
     {
         unix_funcs->pe_module_loaded(*module, (void*)((BYTE*)*module + map_size));
     }
+
+    if (!wcscmp( wm->ldr.BaseDllName.Buffer, L"libcef.dll" ) ||
+        !wcscmp( wm->ldr.BaseDllName.Buffer, L"Qt5WebEngineCore.dll" ))
+    {
+        apply_binary_patches( wm );
+    }
+
+    if (!wcscmp( wm->ldr.BaseDllName.Buffer, L"cohtml_Unity3DPlugin.dll" ))
+        apply_fuzzy_binary_patches( wm );
 #endif
+
     wm->ldr.LoadCount = 1;
     *pwm = wm;
     *module = NULL;
@@ -2722,8 +2738,153 @@ static WINE_MODREF *find_existing_module( HMODULE module )
 }
 
 #ifdef __x86_64__
-/* CW HACK 19487: Patch out %gs:8h accesses in various versions of libcef.dll */
-static void patch_libcef( WINE_MODREF** pwm )
+/* CW HACK 22901 */
+static NTSTATUS get_env_var( const WCHAR *name, SIZE_T extra, UNICODE_STRING *ret );
+static BOOL using_d3dmetal(void)
+{
+    static int res = -1;
+    UNICODE_STRING wined3dmetal = {};
+
+    if (res != -1)
+        return res;
+
+    if (get_env_var( L"WINED3DMETAL", 0, &wined3dmetal ))
+        res = 0;
+    else
+    {
+        res = wcscmp( wined3dmetal.Buffer, L"0" );
+        RtlFreeHeap( GetProcessHeap(), 0, wined3dmetal.Buffer );
+    }
+
+    return res;
+}
+
+static BOOL byte_pattern_matches( const char *addr, char wildcard_byte,
+                                  const char *pattern, size_t pattern_size )
+{
+    size_t i;
+    for (i = 0; i < pattern_size; i++)
+    {
+        if (pattern[i] != wildcard_byte && addr[i] != pattern[i])
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static void *find_byte_pattern( void *dllbase, size_t size_of_image,
+                                char wildcard_byte, const char *pattern, size_t pattern_size )
+{
+    size_t offset;
+    for (offset = 0; offset <= size_of_image - pattern_size; offset++)
+    {
+        char *addr = (char *)dllbase + offset;
+        if (byte_pattern_matches( addr, wildcard_byte, pattern, pattern_size ))
+            return addr;
+    }
+
+    return NULL;
+}
+
+static void apply_byte_pattern_patch( void *addr, char wildcard_byte, const char *after, size_t after_size )
+{
+    size_t i;
+    for (i = 0; i < after_size; i++)
+    {
+        if (after[i] != wildcard_byte)
+            ((char *)addr)[i] = after[i];
+    }
+}
+
+static void apply_fuzzy_binary_patches( WINE_MODREF *wm )
+{
+    static const char before_cohtml_v1[] =
+    {
+        0xcc,                                /* int3 */
+        0x40, 0xff,                          /* push <wildcard> */
+        0x48, 0xff, 0xff, 0xff,              /* sub <wildcard>, <wildcard> */
+        0x80, 0xff, 0xff, 0xff,              /* cmp <wildcard>, <wildcard> */
+        0x48, 0xff, 0xff,                    /* mov <wildcard>, <wildcard> */
+        0x0f, 0x84                           /* jz ... */
+    };
+    static const char after_cohtml_v1[] = {
+        0xff,                                /* (unchanged) */
+        0xff, 0xff,                          /* (unchanged) */
+        0xff, 0xff, 0xff, 0xff,              /* (unchanged) */
+        0xff, 0xff, 0xff, 0xff,              /* (unchanged) */
+        0xff, 0xff, 0xff,                    /* (unchanged) */
+        0xff, 0x85                           /* jnz ... */
+    };
+    C_ASSERT( sizeof(before_cohtml_v1) == sizeof(after_cohtml_v1) );
+
+
+    struct {
+        const WCHAR *libname;
+        const char *name;
+        char wildcard_byte;
+        const char *before, *after;
+        size_t size;
+        BOOL stop_patching_after_success;
+        /* If should_apply is non-null, the patch is only applied if it returns
+         * true (in addition to meeting the other criteria). */
+        BOOL (*should_apply)(void);
+    } static const patches[] =
+    {
+        /* CW HACK 22901: cohtml_Unity3DPlugin.dll for Cities Skylines 2, only
+         * under D3DMetal.
+         */
+        {
+            L"cohtml_Unity3DPlugin.dll",
+            "cohtml_v1",
+            0xff,
+            before_cohtml_v1, after_cohtml_v1,
+            sizeof(before_cohtml_v1),
+            TRUE,
+            using_d3dmetal
+        }
+    };
+
+    unsigned int i;
+    SIZE_T pagesize = page_size;
+    WCHAR *libname = wm->ldr.BaseDllName.Buffer;
+
+    for (i = 0; i < ARRAY_SIZE(patches); i++)
+    {
+        DWORD old_prot;
+        void *dllbase = wm->ldr.DllBase;
+        void *target, *target_page;
+
+        if (wcscmp( libname, patches[i].libname ))
+            continue;
+
+        if (patches[i].should_apply && !patches[i].should_apply())
+        {
+            TRACE( "predicate function said we should not apply %s to %s\n", patches[i].name, debugstr_w(libname) );
+            continue;
+        }
+
+        target = find_byte_pattern( dllbase, wm->ldr.SizeOfImage,
+                                    patches[i].wildcard_byte, patches[i].before, patches[i].size );
+
+        if (!target)
+        {
+            TRACE( "%s doesn't match %s\n", debugstr_w(libname), patches[i].name );
+            continue;
+        }
+
+        TRACE( "Found %s %s byte pattern at %p; applying patch\n", debugstr_w(libname), patches[i].name, target );
+        target_page = (void *)((ULONG_PTR)target & ~(page_size-1));
+        NtProtectVirtualMemory( NtCurrentProcess(), &target_page, &pagesize, PAGE_EXECUTE_READWRITE, &old_prot );
+        apply_byte_pattern_patch( target, patches[i].wildcard_byte, patches[i].after, patches[i].size );
+        NtProtectVirtualMemory( NtCurrentProcess(), &target_page, &pagesize, old_prot, &old_prot );
+
+        if (patches[i].stop_patching_after_success)
+            break;
+    }
+}
+
+
+static void apply_binary_patches( WINE_MODREF* wm )
 {
     static const char before_85_3_9_0[] =
     {
@@ -2755,6 +2916,27 @@ static void patch_libcef( WINE_MODREF** pwm )
         0x48, 0x83, 0xc0, 0xf8                                /* add rax,0xfffffffffffffff8 */
     };
     C_ASSERT( sizeof(before_85_3_9_0) == sizeof(after_85_3_9_0) );
+
+
+    /* The first patch needed for 85.3.11 is the same as 85_3_9_0, just at a different offset. */
+
+    static const char before_85_3_11_1[] =
+    {
+        0x48, 0x8b, 0x44, 0x24, 0x28,  /* mov rax, qword ptr [rsp + 0x28] */
+        0x65, 0x48, 0x8b, 0x34, 0x25, 0x08, 0x00, 0x00, 0x00,  /* mov rsi, qword ptr gs:[0x8] */
+        0x48, 0x85, 0xf6,              /* test rsi, rsi */
+        0x74, 0x2e                     /* jz 0x028c525b */
+
+    };
+    static const char after_85_3_11_1[] =
+    {
+        /* Taking a cue from after_72_0_3626_121_2 - overwriting the test and jump to make room. */
+        0x48, 0x8b, 0x44, 0x24, 0x28,  /* mov rax, qword ptr [rsp + 0x28] */
+        0x65, 0x48, 0x8b, 0x34, 0x25, 0x30, 0x00, 0x00, 0x00,  /* mov rsi, qword ptr gs:[0x30] */
+        0x48, 0x8b, 0x76, 0x08,        /* mov rsi, qword ptr [rsi+8] */
+        0x90,                          /* nop */
+    };
+    C_ASSERT( sizeof(before_85_3_11_1) == sizeof(after_85_3_11_1) );
 
 
     static const char before_72_0_3626_121_1[] =
@@ -2818,9 +3000,73 @@ static void patch_libcef( WINE_MODREF** pwm )
     };
     C_ASSERT( sizeof(before_72_0_3626_121_3) == sizeof(after_72_0_3626_121_3) );
 
+    static const char before_qt_5_15_2_0_1[] =
+    {
+        0x65, 0x48, 0x8b, 0x04, 0x25, 0x08, 0x00, 0x00, 0x00, /* mov rax, qword [gs:0x8] */
+        0xc3,                                                 /* ret */
+        0xcc,                                                 /* int3 */
+        0xcc,                                                 /* int3 */
+        0xcc,                                                 /* int3 */
+        0xcc,                                                 /* int3 */
+        0xcc,                                                 /* int3 */
+        0xcc,                                                 /* int3 */
+        0x48, 0x83, 0xec, 0x28,                               /* sub rsp, 0x28 */
+        0x65, 0x48, 0x8b, 0x04, 0x25, 0x08, 0x00, 0x00, 0x00, /* mov rax, qword [gs:0x8] */
+        0x48, 0x83, 0xe8, 0x08                                /* sub rax, 0x8 */
+    };
+    static const char after_qt_5_15_2_0_1[] =
+    {
+        0x65, 0x48, 0x8b, 0x04, 0x25, 0x30, 0x00, 0x00, 0x00, /* mov rax, qword [gs:0x30] */
+        0x48, 0x8b, 0x40, 0x08,                               /* mov rax, qword [rax+8] */
+        0xc3,                                                 /* ret */
+        0xcc,                                                 /* int3 */
+        0xcc,                                                 /* int3 */
+        0x48, 0x83, 0xec, 0x28,                               /* sub rsp, 0x28 */
+        0xe8, 0xe7, 0xff, 0xff, 0xff,                         /* call 0xfffffffffffffffe */
+        0x90,                                                 /* nop */
+        0x90,                                                 /* nop */
+        0x90,                                                 /* nop */
+        0x90,                                                 /* nop */
+        0x48, 0x83, 0xe8, 0x08                                /* sub rax,0x8 */
+    };
+    C_ASSERT( sizeof(before_qt_5_15_2_0_1) == sizeof(after_qt_5_15_2_0_1) );
+
+    static const char before_qt_5_15_2_0_2[] = {
+        0xff, 0x15, 0xd5, 0xb4, 0x6e, 0x02,                   /* call [KERNEL32.DLL::VirtualQuery] */
+        0x65, 0x48, 0x8b, 0x04, 0x25, 0x08, 0x00, 0x00, 0x00, /* mov rax, qword [gs:0x8] */
+        0x48, 0x8b, 0x4c, 0x24, 0x28                          /* mov rcx, qword [rsp+0x28] */
+    };
+    static const char after_qt_5_15_2_0_2[] = {
+        0xff, 0x15, 0xd5, 0xb4, 0x6e, 0x02, /* call [KERNEL32.DLL::VirtualQuery] */
+        0xe8, 0x78, 0xff, 0xff, 0xff,       /* call 0xfffffffffffffffe */
+        0x90,                               /* nop */
+        0x90,                               /* nop */
+        0x90,                               /* nop */
+        0x90,                               /* nop */
+        0x48, 0x8b, 0x4c, 0x24, 0x28        /* mov rcx, qword [rsp+0x28] */
+    };
+    C_ASSERT( sizeof(before_qt_5_15_2_0_2) == sizeof(after_qt_5_15_2_0_2) );
+
+
+    static const char before_epic_cmd_line_args_90_6_7[] = {
+        0x8b, 0x47, 0x64,
+        0x89, 0x43, 0x64,
+        0x8b, 0x47, 0x68,              /* mov eax, dword ptr [rdi+0x68] */
+        0x89, 0x43, 0x68,              /* mov dword ptr [rbx + 0x68], eax */
+    };
+    static const char after_epic_cmd_line_args_90_6_7[] = {
+        0x8b, 0x47, 0x64,
+        0x89, 0x43, 0x64,
+        0x31, 0xc0,                     /* xor eax, eax */
+        0x90,                           /* nop */
+        0x89, 0x43, 0x68                /* mov dword ptr [rsi+0x68], eax */
+    };
+    C_ASSERT( sizeof(before_epic_cmd_line_args_90_6_7) == sizeof(after_epic_cmd_line_args_90_6_7) );
+
 
     struct
     {
+        const WCHAR *libname;
         const char *name;
         const void *before, *after;
         size_t size;
@@ -2828,13 +3074,35 @@ static void patch_libcef( WINE_MODREF** pwm )
         BOOL stop_patching_after_success;
     } static const patches[] =
     {
+        /* CW HACK 22584L
+         * libcef.dll 85.3.11, for an updated Rockstar Games Social Club/Launcher.
+         */
+        {
+            L"libcef.dll",
+            "CEF %gs 85.3.11-0",
+            /* This patch is identical to the one for 85.3.9, just at a different offset. */
+            before_85_3_9_0, after_85_3_9_0,
+            sizeof(before_85_3_9_0),
+            0x28c5190,
+            FALSE
+        },
+        {
+            L"libcef.dll",
+            "CEF %gs 85.3.11-1",
+            before_85_3_11_1, after_85_3_11_1,
+            sizeof(before_85_3_11_1),
+            0x28c521a,
+            TRUE
+        },
+
         /* CW HACK 18582:
          * libcef.dll 85.3.9.0 used by the Rockstar Games Social Club/Launcher
          * (and downloadable from
          * https://cef-builds.spotifycdn.com/index.html#windows64).
          */
         {
-            "85.3.9.0",
+            L"libcef.dll",
+            "CEF %gs 85.3.9.0",
             before_85_3_9_0, after_85_3_9_0,
             sizeof(before_85_3_9_0),
             0x28c4b30,
@@ -2846,50 +3114,122 @@ static void patch_libcef( WINE_MODREF** pwm )
          * Patch also works for version downloadable from CEF builds.
          */
         {
-            "72.0.3626.121",
+            L"libcef.dll",
+            "CEF %gs 72.0.3626.121-0",
             before_72_0_3626_121_1, after_72_0_3626_121_1,
             sizeof(before_72_0_3626_121_1),
             0x23bb2ad,
             FALSE
         },
         {
-            "72.0.3626.121",
+            L"libcef.dll",
+            "CEF %gs 72.0.3626.121-1",
             before_72_0_3626_121_2, after_72_0_3626_121_2,
             sizeof(before_72_0_3626_121_2),
             0x23bb329,
             FALSE
         },
         {
-            "72.0.3626.121",
+            L"libcef.dll",
+            "CEF %gs 72.0.3626.121-2",
             before_72_0_3626_121_3, after_72_0_3626_121_3,
             sizeof(before_72_0_3626_121_3),
             0x23bb369,
+            TRUE
+        },
+
+        /* CW HACK 16900:
+         * libcef.dll 72.0.3626.96 used by the game Wizard101.
+         * Patch also works for version 3.3626.1886.g162fdec downloadable from CEF builds.
+         */
+        {
+            L"libcef.dll",
+            "CEF %gs 72.0.3626.96-0",
+            /* This patch is identical to the one for 72.0.3626.121, just at a different offset. */
+            before_72_0_3626_121_1, after_72_0_3626_121_1,
+            sizeof(before_72_0_3626_121_1),
+            0x23bb82d,
+            FALSE
+        },
+        {
+            L"libcef.dll",
+            "CEF %gs 72.0.3626.96-1",
+            before_72_0_3626_121_2, after_72_0_3626_121_2,
+            sizeof(before_72_0_3626_121_2),
+            0x23bb8a9,
+            FALSE
+        },
+        {
+            L"libcef.dll",
+            "CEF %gs 72.0.3626.96-2",
+            before_72_0_3626_121_3, after_72_0_3626_121_3,
+            sizeof(before_72_0_3626_121_3),
+            0x23bb8e9,
+            TRUE
+        },
+
+        /* CW HACK 21548:
+         * Qt5WebEngineCore.dll 5.15.2.0 used by the EA Launcher.
+         * Based on CEF 83.0.4103.122, but has different offsets.
+         */
+        {
+            L"Qt5WebEngineCore.dll",
+            "CEF/Qt5WebEngineCore %gs 5.15.2.0-0",
+            before_qt_5_15_2_0_1, after_qt_5_15_2_0_1,
+            sizeof(before_qt_5_15_2_0_1),
+            0x2810f10,
+            FALSE
+        },
+        {
+            L"Qt5WebEngineCore.dll",
+            "CEF/Qt5WebEngineCore %gs 5.15.2.0-1",
+            before_qt_5_15_2_0_2, after_qt_5_15_2_0_2,
+            sizeof(before_qt_5_15_2_0_2),
+            0x2810f8d,
+            TRUE
+        },
+
+        /* CW HACK 23854:
+         * Ignore the command_line_args_disabled flag in the cef_settings_t
+         * passed to cef_inititalize. Always set it to 0.
+         */
+        {
+            L"libcef.dll",
+            "CEF cmd_line_args_disabled 90.6.7",
+            before_epic_cmd_line_args_90_6_7,
+            after_epic_cmd_line_args_90_6_7,
+            sizeof(before_epic_cmd_line_args_90_6_7),
+            0x3807,
             TRUE
         },
     };
 
     unsigned int i;
     SIZE_T pagesize = page_size;
+    WCHAR *libname = wm->ldr.BaseDllName.Buffer;
 
     for (i = 0; i < ARRAY_SIZE(patches); i++)
     {
         DWORD old_prot;
-        void *dllbase = (*pwm)->ldr.DllBase;
+        void *dllbase = wm->ldr.DllBase;
         void *target = (void *)((ULONG_PTR)dllbase + patches[i].offset);
         void *target_page = (void *)((ULONG_PTR)target & ~(page_size-1));
 
-        if ((*pwm)->ldr.SizeOfImage < patches[i].offset)
+        if (wcscmp( libname, patches[i].libname ))
+            continue;
+
+        if (wm->ldr.SizeOfImage < patches[i].offset)
         {
-            TRACE( "libcef.dll too small to be %s\n", patches[i].name );
+            TRACE( "%s too small to match patch '%s'\n", debugstr_w(libname), patches[i].name );
             continue;
         }
         if (memcmp( target, patches[i].before, patches[i].size ))
         {
-            TRACE( "libcef.dll doesn't match %s\n", patches[i].name );
+            TRACE( "%s doesn't match patch '%s'\n", debugstr_w(libname), patches[i].name );
             continue;
         }
 
-        TRACE( "Found libcef.dll %s, patching out gs:0x8 accesses\n", patches[i].name );
+        TRACE( "Found matching %s, applying patch '%s'\n", debugstr_w(libname), patches[i].name );
         NtProtectVirtualMemory( NtCurrentProcess(), &target_page, &pagesize, PAGE_EXECUTE_READWRITE, &old_prot );
         memcpy( target, patches[i].after, patches[i].size );
         NtProtectVirtualMemory( NtCurrentProcess(), &target_page, &pagesize, old_prot, &old_prot );
@@ -3483,10 +3823,6 @@ static NTSTATUS load_dll( const WCHAR *load_path, const WCHAR *libname, DWORD fl
 
     case STATUS_SUCCESS:  /* valid PE file */
         nts = load_native_dll( load_path, &nt_name, mapping, &image_info, &id, flags, system, pwm );
-#if defined(__APPLE__) && defined(__x86_64__)
-        if (nts == STATUS_SUCCESS && !wcscmp( libname, L"libcef.dll" ) && unix_funcs->gs_patching_needed())
-            patch_libcef( pwm );
-#endif
         break;
     }
 
