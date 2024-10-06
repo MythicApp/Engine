@@ -116,8 +116,8 @@ update_dylib_paths() {
 # Function to copy the libraries into the appropriate directories
 copy_libraries() {
   local lib="$1"
-  local gstreamer_dir="Libraries/Wine/lib/gstreamer-1.0"
-  local lib_dir="Libraries/Wine/lib"
+  local gstreamer_dir="Engine/wine/lib/gstreamer-1.0"
+  local lib_dir="Engine/wine/lib"
 
   mkdir -p "$gstreamer_dir" "$lib_dir"
 
@@ -169,7 +169,7 @@ for dylib in "${all_dylibs[@]}"; do
 done
 
 # Copy GStreamer include files
-cp -a "$(brew --prefix gstreamer)/lib/gstreamer-1.0/include" Libraries/Wine/lib/gstreamer-1.0
+cp -a "$(brew --prefix gstreamer)/lib/gstreamer-1.0/include" Engine/wine/lib/gstreamer-1.0
 
 # Update specific GStreamer shared object
-update_dylib_paths Libraries/Wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
+update_dylib_paths Engine/wine/lib/wine/x86_64-unix/winegstreamer.so "@rpath/"
