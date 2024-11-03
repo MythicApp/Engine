@@ -199,20 +199,29 @@ jobs:
         run: |
           curl -L -o verbs.txt https://raw.githubusercontent.com/Winetricks/winetricks/master/files/verbs/all.txt
 
+      - name: Download rpc-bridge v1.2
+        run: |
+          curl -L -o bridge.zip https://github.com/EnderIce2/rpc-bridge/releases/download/v1.2/bridge.zip
+          unzip bridge.zip -d rpc-bridge
+          rm bridge.zip
+
       - name: Assemble Engine Folder
         run: |
-          mkdir -p Engine/DXVK
-          mkdir -p Engine/wine
+          mkdir Engine
+          
+          mkdir Engine/DXVK
+          mkdir Engine/wine
 
           cp -a ${{ env.WINE_INSTALLROOT }}/. Engine/wine/
-
           rm -rf Engine/wine/share/man
 
-          cp -a verbs.txt Engine
           cp -a properties.plist Engine
 
+          cp -a verbs.txt Engine
           cp -a $(brew --prefix winetricks)/bin/winetricks Engine
+          
           cp -a DXVK Engine
+          cp -a rpc-bridge Engine
 
       - name: Copy External Libraries
         run: |
