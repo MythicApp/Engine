@@ -20,7 +20,7 @@ Mythic Engine is Mythic's implementation of Apple's [Game Porting Toolkit (GPTK)
 <h6 align="center">
   <br>
   <a href="https://getwhisky.app">
-    <img src="https://github.com/user-attachments/assets/f9e15655-2e5c-4461-8a32-dfc107c99fc8" 
+    <img src="https://github.com/user-attachments/assets/e984cf79-cccc-4a66-af2d-789ff21ed099" 
       style="width: 20%; height: 20%;">
   </a>
 
