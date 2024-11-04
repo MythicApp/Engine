@@ -15,6 +15,12 @@
 
 Mythic Engine is Mythic's implementation of Apple's [Game Porting Toolkit (GPTK)](https://developer.apple.com/games/game-porting-toolkit/), which uses [wine](https://www.winehq.org/) translation technology and the Apple-designed Direct3D-to-Metal translator, D3DMetal, to create an effective windows gaming experience on macOS. Similar to Proton, Mythic Engine is a backend that enables native Windows games to be playable on macOS, while coming closer to native performance than ever before.
 
+### Dependencies
+Mythic Engine uses the following dependencies in addition to D3DMetal *(and obviously, wine)*:
+* [rpc-bridge](https://github.com/EnderIce2/rpc-bridge) - Enable Rich Presence between your Wine applications and the native Discord client on Linux and macOS.
+* [DXVK-macOS](https://github.com/Gcenx/DXVK-macOS) - Vulkan-based implementation of D3D10 and D3D11 for macOS / Wine.
+* [winetricks](https://github.com/Winetricks/winetricks) - An easy way to work around problems in Wine.
+
 ---
 
 <h6 align="center">
