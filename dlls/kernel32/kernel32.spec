@@ -694,6 +694,7 @@
 @ stdcall -import GetFinalPathNameByHandleW(long ptr long long)
 @ stdcall GetFirmwareEnvironmentVariableA(str str ptr long)
 @ stdcall GetFirmwareEnvironmentVariableW(wstr wstr ptr long)
+@ stdcall GetFirmwareType(ptr)
 @ stdcall -import GetFullPathNameA(str long ptr ptr)
 # @ stub GetFullPathNameTransactedA
 # @ stub GetFullPathNameTransactedW
@@ -1448,6 +1449,7 @@
 @ stdcall SetProcessAffinityMask(long long)
 @ stdcall -import SetProcessAffinityUpdateMode(long long)
 @ stdcall SetProcessDEPPolicy(long)
+@ stdcall -import SetProcessInformation(long long ptr long)
 @ stdcall -import SetProcessMitigationPolicy(long ptr long)
 @ stdcall -import SetProcessPreferredUILanguages(long ptr ptr)
 @ stdcall -import SetProcessPriorityBoost(long long)

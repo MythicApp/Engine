@@ -965,6 +965,7 @@ enable_avicap32
 enable_avifil32
 enable_avrt
 enable_bcrypt
+enable_bcryptprimitives
 enable_bluetoothapis
 enable_browseui
 enable_bthprops_cpl
@@ -1218,6 +1219,7 @@ enable_msimtf
 enable_msisip
 enable_msisys_ocx
 enable_msls31
+enable_msmpeg2vdec
 enable_msnet32
 enable_mspatcha
 enable_msports
@@ -21837,6 +21839,7 @@ wine_fn_config_makefile dlls/avifile.dll16 enable_win16
 wine_fn_config_makefile dlls/avrt enable_avrt
 wine_fn_config_makefile dlls/bcrypt enable_bcrypt
 wine_fn_config_makefile dlls/bcrypt/tests enable_tests
+wine_fn_config_makefile dlls/bcryptprimitives enable_bcryptprimitives
 wine_fn_config_makefile dlls/bluetoothapis enable_bluetoothapis
 wine_fn_config_makefile dlls/browseui enable_browseui
 wine_fn_config_makefile dlls/browseui/tests enable_tests
@@ -22225,6 +22228,7 @@ wine_fn_config_makefile dlls/msimtf enable_msimtf
 wine_fn_config_makefile dlls/msisip enable_msisip
 wine_fn_config_makefile dlls/msisys.ocx enable_msisys_ocx
 wine_fn_config_makefile dlls/msls31 enable_msls31
+wine_fn_config_makefile dlls/msmpeg2vdec enable_msmpeg2vdec
 wine_fn_config_makefile dlls/msnet32 enable_msnet32
 wine_fn_config_makefile dlls/mspatcha enable_mspatcha
 wine_fn_config_makefile dlls/mspatcha/tests enable_tests

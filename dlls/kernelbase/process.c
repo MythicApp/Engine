@@ -861,6 +861,26 @@ BOOL WINAPI DECLSPEC_HOTPATCH CreateProcessW( const WCHAR *app_name, WCHAR *cmd_
 }
 
 
+/**********************************************************************
+ *           SetProcessInformation   (kernelbase.@)
+ */
+BOOL WINAPI SetProcessInformation( HANDLE process, PROCESS_INFORMATION_CLASS info_class, void *info, DWORD size )
+{
+    switch (info_class)
+    {
+        case ProcessMemoryPriority:
+            return set_ntstatus( NtSetInformationProcess( process, ProcessPagePriority, info, size ));
+        case ProcessPowerThrottling:
+            return set_ntstatus( NtSetInformationProcess( process, ProcessPowerThrottlingState, info, size ));
+        case ProcessLeapSecondInfo:
+            return set_ntstatus( NtSetInformationProcess( process, ProcessLeapSecondInformation, info, size ));
+        default:
+            FIXME("Unrecognized information class %d.\n", info_class);
+            return FALSE;
+    }
+}
+
+
 /*********************************************************************
  *           DuplicateHandle   (kernelbase.@)
  */
@@ -1248,10 +1268,13 @@ BOOL WINAPI DECLSPEC_HOTPATCH ProcessIdToSessionId( DWORD pid, DWORD *id )
  */
 BOOL WINAPI DECLSPEC_HOTPATCH QueryProcessCycleTime( HANDLE process, ULONG64 *cycle )
 {
-    static int once;
-    if (!once++) FIXME( "(%p,%p): stub!\n", process, cycle );
-    SetLastError( ERROR_CALL_NOT_IMPLEMENTED );
-    return FALSE;
+    PROCESS_CYCLE_TIME_INFORMATION time;
+
+    if (!set_ntstatus( NtQueryInformationProcess( process, ProcessCycleTime, &time, sizeof(time), NULL ) ))
+        return FALSE;
+
+    *cycle = time.AccumulatedCycles;
+    return TRUE;
 }
 
 
@@ -1867,6 +1890,40 @@ BOOL WINAPI DECLSPEC_HOTPATCH InitializeProcThreadAttributeList( struct _PROC_TH
 }
 
 
+static inline DWORD validate_proc_thread_attribute( DWORD_PTR attr, SIZE_T size )
+{
+    switch (attr)
+    {
+    case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:
+        if (size != sizeof(HANDLE)) return ERROR_BAD_LENGTH;
+        break;
+    case PROC_THREAD_ATTRIBUTE_HANDLE_LIST:
+        if ((size / sizeof(HANDLE)) * sizeof(HANDLE) != size) return ERROR_BAD_LENGTH;
+        break;
+    case PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR:
+        if (size != sizeof(PROCESSOR_NUMBER)) return ERROR_BAD_LENGTH;
+        break;
+    case PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY:
+       if (size != sizeof(DWORD) && size != sizeof(DWORD64)) return ERROR_BAD_LENGTH;
+       break;
+    case PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY:
+        if (size != sizeof(DWORD) && size != sizeof(DWORD64) && size != sizeof(DWORD64) * 2)
+            return ERROR_BAD_LENGTH;
+        break;
+    case PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE:
+       if (size != sizeof(HPCON)) return ERROR_BAD_LENGTH;
+       break;
+    case PROC_THREAD_ATTRIBUTE_JOB_LIST:
+        if ((size / sizeof(HANDLE)) * sizeof(HANDLE) != size) return ERROR_BAD_LENGTH;
+        break;
+    default:
+        FIXME( "Unhandled attribute %Iu\n", attr & PROC_THREAD_ATTRIBUTE_NUMBER );
+        return ERROR_NOT_SUPPORTED;
+    }
+    return 0;
+}
+
+
 /***********************************************************************
  *           UpdateProcThreadAttribute   (kernelbase.@)
  */
@@ -1874,7 +1931,7 @@ BOOL WINAPI DECLSPEC_HOTPATCH UpdateProcThreadAttribute( struct _PROC_THREAD_ATT
                                                          DWORD flags, DWORD_PTR attr, void *value,
                                                          SIZE_T size, void *prev_ret, SIZE_T *size_ret )
 {
-    DWORD mask;
+    DWORD mask, err;
     struct proc_thread_attr *entry;
 
     TRACE( "(%p %lx %08Ix %p %Id %p %p)\n", list, flags, attr, value, size, prev_ret, size_ret );
@@ -1884,68 +1941,9 @@ BOOL WINAPI DECLSPEC_HOTPATCH UpdateProcThreadAttribute( struct _PROC_THREAD_ATT
         SetLastError( ERROR_GEN_FAILURE );
         return FALSE;
     }
-
-    switch (attr)
+    if ((err = validate_proc_thread_attribute( attr, size )))
     {
-    case PROC_THREAD_ATTRIBUTE_PARENT_PROCESS:
-        if (size != sizeof(HANDLE))
-        {
-            SetLastError( ERROR_BAD_LENGTH );
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_HANDLE_LIST:
-        if ((size / sizeof(HANDLE)) * sizeof(HANDLE) != size)
-        {
-            SetLastError( ERROR_BAD_LENGTH );
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_IDEAL_PROCESSOR:
-        if (size != sizeof(PROCESSOR_NUMBER))
-        {
-            SetLastError( ERROR_BAD_LENGTH );
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_CHILD_PROCESS_POLICY:
-       if (size != sizeof(DWORD) && size != sizeof(DWORD64))
-       {
-           SetLastError( ERROR_BAD_LENGTH );
-           return FALSE;
-       }
-       break;
-
-    case PROC_THREAD_ATTRIBUTE_MITIGATION_POLICY:
-        if (size != sizeof(DWORD) && size != sizeof(DWORD64) && size != sizeof(DWORD64) * 2)
-        {
-            SetLastError( ERROR_BAD_LENGTH );
-            return FALSE;
-        }
-        break;
-
-    case PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE:
-       if (size != sizeof(HPCON))
-       {
-           SetLastError( ERROR_BAD_LENGTH );
-           return FALSE;
-       }
-       break;
-
-    case PROC_THREAD_ATTRIBUTE_JOB_LIST:
-        if ((size / sizeof(HANDLE)) * sizeof(HANDLE) != size)
-        {
-            SetLastError( ERROR_BAD_LENGTH );
-            return FALSE;
-        }
-        break;
-
-    default:
-        SetLastError( ERROR_NOT_SUPPORTED );
-        FIXME( "Unhandled attribute %Iu\n", attr & PROC_THREAD_ATTRIBUTE_NUMBER );
+        SetLastError( err );
         return FALSE;
     }
 

@@ -794,6 +794,7 @@ NTSTATUS WINAPI wow64_NtQueryInformationProcess( UINT *args )
     case ProcessDebugFlags:  /* ULONG */
     case ProcessExecuteFlags:  /* ULONG */
     case ProcessCookie:  /* ULONG */
+    case ProcessCycleTime:  /* PROCESS_CYCLE_TIME_INFORMATION */
         /* FIXME: check buffer alignment */
         return NtQueryInformationProcess( handle, class, ptr, len, retlen );
 
@@ -1120,6 +1121,9 @@ NTSTATUS WINAPI wow64_NtSetInformationProcess( UINT *args )
     case ProcessDefaultHardErrorMode:   /* ULONG */
     case ProcessPriorityClass:   /* PROCESS_PRIORITY_CLASS */
     case ProcessExecuteFlags:   /* ULONG */
+    case ProcessPagePriority:   /* MEMORY_PRIORITY_INFORMATION */
+    case ProcessPowerThrottlingState:   /* PROCESS_POWER_THROTTLING_STATE */
+    case ProcessLeapSecondInformation:   /* PROCESS_LEAP_SECOND_INFO */
         return NtSetInformationProcess( handle, class, ptr, len );
 
     case ProcessAffinityMask:   /* ULONG_PTR */
