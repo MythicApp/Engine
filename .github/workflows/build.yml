@@ -34,6 +34,14 @@ jobs:
       - name: Use Xcode 15
         run: sudo xcode-select -switch /Applications/Xcode_15.2.app/Contents/Developer
 
+      - name: Install MacPorts
+        run: |
+          # install ports by defualt to /opt/local/bin
+          sudo curl -L https://github.com/macports/macports-base/releases/download/v2.10.5/MacPorts-2.10.5-13-Ventura.pkg > /tmp/macports.pkg
+          sudo installer -pkg /tmp/macports.pkg -target /
+          sudo ln -s /opt/local/bin/port /usr/local/bin/port
+          sudo port selfupdate
+
       - name: Install Homebrew Packages
         continue-on-error: true
         run: |
@@ -41,7 +49,7 @@ jobs:
               # Build Dependencies
               "bison"
               "pkg-config"
-              "gcenx/wine/cx-llvm"
+              # "gcenx/wine/cx-llvm" # deprecated; using llvm-cx from macports instead
 
               # Dependencies
               "freetype"
@@ -51,11 +59,15 @@ jobs:
               "sdl2"
               "molten-vk"
               "winetricks"
-              "ffmpeg@7" # added ffmpeg even though i dont know if it is even needed lol
           )
 
           brew update
           brew install "${REQUIRED_PACKAGES[@]}"
+
+      - name: Install llvm-cx from macports
+        continue-on-error: true
+        run: |
+          sudo port install llvm-cx
 
       - name: Install mingw
         continue-on-error: true
@@ -80,7 +92,8 @@ jobs:
       - name: Add bison & cx-llvm to $PATH
         run: |
           echo "$(brew --prefix bison)/bin" >> $GITHUB_PATH
-          echo "$(brew --prefix cx-llvm)/bin" >> $GITHUB_PATH
+          # echo "$(brew --prefix cx-llvm)/bin" >> $GITHUB_PATH
+          echo "/opt/local/libexec/llvm-cx/bin" >> $GITHUB_PATH
 
       - name: Configure wine64
         run: |
