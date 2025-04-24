@@ -26,7 +26,7 @@
 \margl1440\margr1440\vieww28400\viewh15820\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b\fs36 \cf0 Evaluation environment for Windows games 2.0 README\
+\f0\b\fs36 \cf0 Evaluation environment for Windows games 2.1 README\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f1\b0\fs24 \cf0 \
@@ -80,7 +80,7 @@ While simple to use once configured and installed, the evaluation environment fo
 \f0\b \cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1\b0 \cf0 Note: early in the macOS 15 beta period these pre-built tools may still be carrying the 1.1 version of D3DMetal. You can temporarily update these tools to use the 2.0 version as follows.\
+\f1\b0 \cf0 Note: early in the macOS 15 beta period these pre-built tools may still be carrying the 1.1 version of D3DMetal. You can temporarily update these tools to use the latest version as follows.\
 \pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\sb240\pardirnatural\partightenfactor0
 \ls3\ilvl0\cf0 {\listtext	\uc0\u8226 	}
 \f0\b homebrew-wine
@@ -91,7 +91,7 @@ While simple to use once configured and installed, the evaluation environment fo
 
 \f3 \cf0 cd /Applications/Game\\ Porting\\ Toolkit.app/Contents/Resources/wine/lib/external\
 mv D3DMetal.framework D3DMetal.framework-old; mv libd3dshared.dylib libd3dshared.dylib-old\
-ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.0/redist/lib/external/ .
+ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.1/redist/lib/external/ .
 \f1 \
 \pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\sb240\pardirnatural\partightenfactor0
 \ls4\ilvl0\cf0 {\listtext	\uc0\u8226 	}
@@ -101,7 +101,7 @@ ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.0/redist/lib
 
 \f3 \cf0 cd ~/Library/Application\\ Support/com.isaacmarovitz.Whisky/Libraries/Wine/lib/external\
 mv D3DMetal.framework D3DMetal.framework-old; mv libd3dshared.dylib libd3dshared.dylib-old\
-ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.0/redist/lib/external/ .
+ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.1/redist/lib/external/ .
 \f1 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
@@ -113,7 +113,7 @@ ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.0/redist/lib
 
 \f3 \cf0 cd /Applications/CrossOver.app/Contents/SharedSupport/CrossOver/lib64/apple_gptk/external\
 mv D3DMetal.framework D3DMetal.framework-old; mv libd3dshared.dylib libd3dshared.dylib-old\
-ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.0/redist/lib/external/ .
+ditto /Volumes/Evaluation\\ environment\\ for\\ Windows\\ games\\ 2.1/redist/lib/external/ .
 \f1 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 \cf0 \
@@ -225,13 +225,13 @@ If the \'93Wine configuration\'94 window does not appear, and no new icon appear
 
 \f1\b0 \cf0 \
 The graphics bridge libraries need to be placed inside your Wine prefix in order to finalize your evaluation environment. These instructions assume you have mounted the evaluation environment package at 
-\f3 /Volumes/Evaluation Environment For Windows Games-2.0
+\f3 /Volumes/Evaluation Environment For Windows Games-2.1
 \f1 .\
 \pard\tx220\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li720\fi-720\sb240\pardirnatural\partightenfactor0
 \ls18\ilvl0\cf0 {\listtext	\uc0\u8226 	}Copy the Game Porting Toolkit library directory into Wine\'92s library directory.\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\li1438\fi-3\sb120\pardirnatural\partightenfactor0
 
-\f3 \cf0 ditto /Volumes/Evaluation\\ Environment\\ For\\ Windows\\ Games-2.0/redist/lib/ `brew --prefix game-porting-toolkit`/lib/\
+\f3 \cf0 ditto /Volumes/Evaluation\\ Environment\\ For\\ Windows\\ Games-2.1/redist/lib/ `brew --prefix game-porting-toolkit`/lib/\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f1 \cf0 \
