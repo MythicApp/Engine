@@ -14,23 +14,8 @@
 </h1>
 
 Mythic Engine is Mythic's implementation of Apple's [Game Porting Toolkit (GPTK)](https://developer.apple.com/games/game-porting-toolkit/), which uses [wine](https://www.winehq.org/) translation technology and the Apple-designed Direct3D-to-Metal translator, D3DMetal, to create an effective windows gaming experience on macOS. Similar to Proton, Mythic Engine is a backend that enables native Windows games to be playable on macOS, while coming closer to native performance than ever before.
-
----
-
-<h6 align="center">
-  <br>
-  <a href="https://getwhisky.app">
-    <img src="https://github.com/user-attachments/assets/f9e15655-2e5c-4461-8a32-dfc107c99fc8" 
-      style="width: 20%; height: 20%;">
-  </a>
-
-  A derivative of <a href="https://github.com/Whisky-App/wine">WhiskyWine</a>, credit to those who contribute to and presently work on it.
   
-  Please note that performance will vary between games.
-  
-  Also note that GPTKv2 is currently still in its beta phase; bugs and hiccups are to be expected.
-  <br>
-</h6>
+<sub>Note that GPTKv3 is currently in its beta phase; bugs and hiccups are to be expected.</sub>
 
 ---
 <br>
