@@ -73,7 +73,6 @@ jobs:
       - name: Install mingw (install legacy formula from a temporary tap)
         continue-on-error: true
         run: |
-          set -euo pipefail
           FORMULA_URL="https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb"
           TMP_FORMULA="/tmp/mingw-w64.rb"
           curl -fL "$FORMULA_URL" -o "$TMP_FORMULA"
@@ -102,7 +101,6 @@ jobs:
 
       - name: Echo Libs [DEBUG]
         run: |
-          set -euo pipefail
           echo "Brew Libs"
           ls "$(brew --prefix)/lib" || true
 
