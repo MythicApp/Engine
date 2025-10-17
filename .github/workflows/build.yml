@@ -59,6 +59,7 @@ jobs:
               "sdl2"
               "molten-vk"
               "winetricks"
+              "ffmpeg@7"
           )
 
           brew update
@@ -69,25 +70,55 @@ jobs:
         run: |
           sudo port install llvm-cx
 
-      - name: Install mingw
+      - name: Install mingw (install legacy formula from a temporary tap)
         continue-on-error: true
         run: |
-          # As of mingw-w64 12, brew uses UCRT instead of MSVCRT
-          # Wine will fail to build with UCRT, so we must rollback.
+          set -euo pipefail
+          FORMULA_URL="https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb"
+          TMP_FORMULA="/tmp/mingw-w64.rb"
+          curl -fL "$FORMULA_URL" -o "$TMP_FORMULA"
+          TAP_USER="${GITHUB_ACTOR:-MythicApp}"
+          TAP_REPO="homebrew-old-formula"
+          TAP_FULL="$TAP_USER/$TAP_REPO"
 
-          curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb > mingw-w64.rb && brew install mingw-w64.rb
-          rm mingw-w64.rb
+          brew tap-new "$TAP_FULL"
+          TAP_DIR="$(brew --repo "$TAP_FULL")"
+          mkdir -p "$TAP_DIR/Formula"
+          mv "$TMP_FORMULA" "$TAP_DIR/Formula/mingw-w64.rb"
+
+          pushd "$TAP_DIR" >/dev/null
+          git add -A || true
+          git commit -m "Add legacy mingw-w64 formula" || true
+          popd >/dev/null
+
+          brew update || true
+
+          if ! brew install "$TAP_FULL/mingw-w64"; then
+            echo "Binary install failed; attempting build-from-source"
+            brew install --build-from-source "$TAP_FULL/mingw-w64"
+          fi
+          # optional: cleanup tap after install
+          # brew untap "$TAP_FULL" || true
 
       - name: Echo Libs [DEBUG]
         run: |
+          set -euo pipefail
           echo "Brew Libs"
-          ls $(brew --prefix)/lib
+          ls "$(brew --prefix)/lib" || true
 
-          echo "FFmpeg Libs" 
-          ls $(brew --prefix ffmpeg@7)/lib
+          echo "FFmpeg Libs"
+          if brew ls --versions ffmpeg@7 >/dev/null 2>&1; then
+            ls "$(brew --prefix ffmpeg@7)/lib" || true
+          else
+            echo "ffmpeg@7 not installed"
+          fi
 
           echo "GStreamer Libs"
-          ls $(brew --prefix gstreamer)/lib/gstreamer-1.0
+          if brew ls --versions gstreamer >/dev/null 2>&1; then
+            ls "$(brew --prefix gstreamer)/lib/gstreamer-1.0" || true
+          else
+            echo "gstreamer not installed"
+          fi
 
       - name: Add bison & cx-llvm to $PATH
         run: |
