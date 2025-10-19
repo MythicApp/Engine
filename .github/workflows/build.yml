@@ -52,7 +52,7 @@ jobs:
               # "gcenx/wine/cx-llvm" # deprecated; using llvm-cx from macports instead
 
               # Dependencies
-              # "freetype" # already installed afaik let's just leave that
+              "freetype"
               "gettext"
               "gnutls"
               "gstreamer"
@@ -63,10 +63,7 @@ jobs:
           )
 
           brew update
-          brew upgrade
-          brew update-reset
-          brew cleanup -s
-          HOMEBREW_DEBUG=1 brew install "${REQUIRED_PACKAGES[@]}"
+          brew install "${REQUIRED_PACKAGES[@]}"
 
       - name: Install llvm-cx from macports
         continue-on-error: true
