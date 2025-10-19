@@ -59,6 +59,7 @@ jobs:
               "sdl2"
               "molten-vk"
               "winetricks"
+              "ffmpeg@7"
           )
 
           brew update
@@ -75,8 +76,28 @@ jobs:
           # As of mingw-w64 12, brew uses UCRT instead of MSVCRT
           # Wine will fail to build with UCRT, so we must rollback.
 
-          curl -L https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb > mingw-w64.rb && brew install mingw-w64.rb
-          rm mingw-w64.rb
+          # brew update necessitates tap creation ☹️☹️☹️
+          TAP_USER="local"
+          TAP_NAME="mingw-w64-rollback"
+          TAP_PATH="$RUNNER_TEMP/homebrew-$TAP_NAME"
+      
+          # create local tap manually bc i cant figure out tap-new
+          mkdir -p "$TAP_PATH/Formula"
+          
+          git -C "$TAP_PATH" init
+          git -C "$TAP_PATH" config user.email "actions@users.noreply.github.com"
+          git -C "$TAP_PATH" config user.name "github-actions"
+      
+          # add mingw 11 latest
+          curl -L "https://raw.githubusercontent.com/Homebrew/homebrew-core/31209a399a7b40bf2cd3abd7aee2715547ccd5bd/Formula/m/mingw-w64.rb" \
+            -o "$TAP_PATH/Formula/mingw-w64.rb"
+      
+          git -C "$TAP_PATH" add Formula/mingw-w64.rb
+          git -C "$TAP_PATH" commit -m "add msvcrt mingw"
+      
+          # tap & go apple pay type beat
+          brew tap "local/$TAP_NAME" "$TAP_PATH"
+          brew install "local/$TAP_NAME/mingw-w64"
 
       - name: Echo Libs [DEBUG]
         run: |
