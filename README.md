@@ -13,6 +13,9 @@
   [![Discord](https://img.shields.io/discord/1154998702650425397?color=5865F2)](https://discord.com/invite/58NZ7fFqPy)
 </h1>
 
+> **This repository is now deprecated.**
+> To continue viewing the development of Mythic Engine, visit [MythicApp/wine](https://github.com/MythicApp/wine).
+
 Mythic Engine is Mythic's implementation of Apple's [Game Porting Toolkit (GPTK)](https://developer.apple.com/games/game-porting-toolkit/), which uses [wine](https://www.winehq.org/) translation technology and the Apple-designed Direct3D-to-Metal translator, D3DMetal, to create an effective windows gaming experience on macOS. Similar to Proton, Mythic Engine is a backend that enables native Windows games to be playable on macOS, while coming closer to native performance than ever before.
 
 ---
